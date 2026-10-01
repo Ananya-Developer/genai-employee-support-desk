@@ -1,0 +1,16 @@
+services:
+  engine:
+    build: ./engine
+    environment:
+      POLICY_CORPUS: /workspace/fixtures/policy-corpus.json
+      ENGINE_KEY: local-engine-key
+    volumes:
+      - ./fixtures:/workspace/fixtures:ro
+    ports: ["8000:8000"]
+  gateway:
+    build: ./gateway
+    environment:
+      ENGINE_URL: http://engine:8000
+      ENGINE_KEY: local-engine-key
+    ports: ["8080:8080"]
+    depends_on: [engine]

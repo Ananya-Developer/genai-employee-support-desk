@@ -1,0 +1,15 @@
+server:
+  port: 8080
+engine:
+  base-url: ${ENGINE_URL:http://127.0.0.1:8000}
+  key: ${ENGINE_KEY:local-engine-key}
+  connect-timeout-ms: 1000
+  read-timeout-ms: 2500
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+springdoc:
+  swagger-ui:
+    path: /docs
