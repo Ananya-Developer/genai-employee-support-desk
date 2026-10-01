@@ -12,4 +12,4 @@ management:
         include: health,info
 springdoc:
   swagger-ui:
-    path: /docs
+    path: /swagger-ui.html

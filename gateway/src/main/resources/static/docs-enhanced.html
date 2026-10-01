@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Support Desk API Docs</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #fff; }
+    #swagger-frame { width: 100%; height: 100vh; border: 0; display: block; }
+  </style>
+</head>
+<body>
+  <iframe id="swagger-frame" src="/swagger-ui.html" title="Swagger UI"></iframe>
+  <script>
+    (function () {
+      const frame = document.getElementById('swagger-frame');
+      const TEXTAREA_ID = 'batch-metadata-json-editor';
+
+      function setReactInputValue(input, value) {
+        const setter = Object.getOwnPropertyDescriptor(
+          frame.contentWindow.HTMLInputElement.prototype,
+          'value'
+        ).set;
+        setter.call(input, value);
+        input.dispatchEvent(new frame.contentWindow.Event('input', { bubbles: true }));
+        input.dispatchEvent(new frame.contentWindow.Event('change', { bubbles: true }));
+      }
+
+      function metadataInput(doc) {
+        // springdoc renders multipart string fields as a text input whose
+        // placeholder is the property name. Prefer that stable signal first.
+        const byPlaceholder = doc.querySelector('input[placeholder="metadata"], input[aria-label="metadata"]');
+        if (byPlaceholder) return byPlaceholder;
+
+        const labels = Array.from(doc.querySelectorAll('label, .property-row, .parameters-col_name, span, div'));
+        for (const label of labels) {
+          const text = (label.textContent || '').trim().toLowerCase();
+          if (!(text === 'metadata' || text.startsWith('metadata '))) continue;
+          let scope = label;
+          for (let i = 0; i < 7 && scope; i += 1, scope = scope.parentElement) {
+            const input = scope.querySelector && scope.querySelector('input[type="text"]');
+            if (input && input.getAttribute('placeholder') !== 'X-Caller-Id') return input;
+          }
+        }
+        return null;
+      }
+
+      function enhance() {
+        let doc;
+        try { doc = frame.contentDocument || frame.contentWindow.document; }
+        catch (_) { return; }
+        if (!doc || doc.getElementById(TEXTAREA_ID)) return;
+
+        const input = metadataInput(doc);
+        if (!input) return;
+
+        const textarea = doc.createElement('textarea');
+        textarea.id = TEXTAREA_ID;
+        textarea.rows = 14;
+        textarea.spellcheck = false;
+        textarea.setAttribute('aria-label', 'Batch metadata JSON');
+        textarea.value = input.value || '';
+        textarea.placeholder = '{\n  "batch_id": "single-01",\n  "as_of": "2026-09-21",\n  "documents": [\n    {\n      "document_id": "request-01",\n      "filename": "request-01.txt"\n    }\n  ]\n}';
+        Object.assign(textarea.style, {
+          width: '100%', minHeight: '280px', boxSizing: 'border-box',
+          resize: 'vertical', padding: '12px', border: '1px solid #b8b8b8',
+          borderRadius: '4px', background: '#fff', color: '#222',
+          fontFamily: 'Consolas, "Courier New", monospace', fontSize: '14px', lineHeight: '1.45'
+        });
+
+        textarea.addEventListener('input', function () {
+          setReactInputValue(input, textarea.value);
+        });
+
+        // Keep Swagger's React-controlled field in place for request serialization,
+        // but visually replace it with the multiline editor.
+        input.style.position = 'absolute';
+        input.style.left = '-10000px';
+        input.style.width = '1px';
+        input.style.height = '1px';
+        input.style.opacity = '0';
+        input.parentElement.insertBefore(textarea, input);
+      }
+
+      frame.addEventListener('load', function () {
+        const doc = frame.contentDocument || frame.contentWindow.document;
+        const observer = new MutationObserver(function () { setTimeout(enhance, 25); });
+        observer.observe(doc.documentElement, { childList: true, subtree: true });
+        setTimeout(enhance, 250);
+        setTimeout(enhance, 750);
+        setTimeout(enhance, 1500);
+      });
+    })();
+  </script>
+</body>
+</html>
